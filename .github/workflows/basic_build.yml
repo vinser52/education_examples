@@ -1,0 +1,52 @@
+name: Build Projects
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  BuildAndTest:
+    name: Build and Test Projects
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [ubuntu-22.04, ubuntu-24.04, ubuntu-latest]
+        compiler: [gcc, clang]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        if [ "${{ matrix.compiler }}" == "gcc" ]; then
+          sudo apt-get install -y g++ make cmake
+        elif [ "${{ matrix.compiler }}" == "clang" ]; then
+          sudo apt-get install -y clang make cmake
+        fi
+
+    - name: Configure cpp_singleton project
+      run: |
+        mkdir -p cpp_singleton/build
+        cd cpp_singleton/build
+        if [ "${{ matrix.compiler }}" == "gcc" ]; then
+          cmake -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ ..
+        elif [ "${{ matrix.compiler }}" == "clang" ]; then
+          cmake -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ ..
+        fi
+
+    - name: Build cpp_singleton project
+      run: |
+        cd cpp_singleton/build
+        make
+
+    - name: Run cpp_singleton project tests
+      run: |
+        cd cpp_singleton/build
+        ./singleton_example
